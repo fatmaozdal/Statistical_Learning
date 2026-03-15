@@ -1,0 +1,102 @@
+---
+title: "Statistical_Learning_Week4"
+author: "Fatma Ozdal"
+date: "2026-03-09"
+output: pdf_document
+---
+
+```{r}
+getwd()
+setwd("/Users/fatmaozdal/Desktop")
+```
+
+```{r}
+ library(readr)
+ library(caret)
+```
+
+
+```{r}
+#data <- read.csv(file.choose())
+data=read_csv("data.csv")
+```
+
+```{r}
+data$diagnosis=as.factor(data$diagnosis)
+ 
+ if(ncol(data) >= 33) {
+   data = data[, -c(1, 33)]
+ } else {
+data = data[, -1] 
+ }
+ 
+ set.seed(123)
+ train_index=sample(1:nrow(data),size = round(0.8 * nrow(data)), replace = FALSE) 
+ train_set=data[train_index, ]
+test_set=data[-train_index, ]
+ 
+ dim(train_set)
+ dim(test_set)
+```
+
+
+
+```{r}
+colnames(train_set)
+```
+
+```{r}
+train_control <- trainControl(method = "cv", number = 10)
+model_logistic_r <- train(diagnosis ~ ., data = train_set, method = "glm", 
+                  family = "binomial", trControl = train_control) 
+
+model_k_nearest_n <- train(diagnosis ~ ., data = train_set, method = "knn",
+                   tuneGrid = data.frame(k = c(3, 7)),
+                   trControl = train_control,
+                   preProcess = c("center", "scale")) 
+
+print(model_logistic_r$results$Accuracy)
+print(model_k_nearest_n$results$Accuracy)
+```
+```{r}
+data = read_csv("data.csv")
+data = data[, !(names(data) %in% c("id", "...33"))]
+data$diagnosis = as.factor(data$diagnosis)
+```
+
+```{r}
+set.seed(123)
+train_index = sample(1:nrow(data), size = round(0.8 * nrow(data)), replace = FALSE)
+train_set = data[train_index, ]
+test_set = data[-train_index, ]
+```
+
+```{r}
+colnames(train_set)
+```
+
+Logistic Regression-KNN
+
+```{r}
+library(caret)
+
+train_control <- trainControl(method = "cv", number = 10)
+model_logistic_r <- train(diagnosis ~ ., data = train_set, method = "glm", 
+                         family = "binomial", trControl = train_control) 
+model_k_nearest_n <- train(diagnosis ~ ., data = train_set, method = "knn",
+                          tuneGrid = data.frame(k = c(3, 7)),
+                          trControl = train_control,
+                          preProcess = c("center", "scale")) 
+
+
+print(model_logistic_r$results$Accuracy)
+print(model_k_nearest_n$results$Accuracy)
+```
+```{r}
+test_predictions <- predict(model_k_nearest_n, newdata = test_set)
+final_results <- confusionMatrix(test_predictions, test_set$diagnosis)
+
+print(final_results)
+```
+
+The success rate of model is %97.37. 

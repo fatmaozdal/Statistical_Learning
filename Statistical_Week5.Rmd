@@ -1,0 +1,88 @@
+---
+title: "Statistical_Learning_Week5"
+author: "Fatma Ozdal"
+date: "2026-03-10"
+output: pdf_document
+---
+
+```{r}
+getwd()
+setwd("~/Desktop")
+```
+
+```{r}
+library(glmnet)
+```
+
+```{r}
+#train <- readRDS(file.choose())
+```
+
+```{r}
+#test <- readRDS(file.choose())
+```
+
+```{r}
+train <- readRDS("masq_train.Rda")
+test <- readRDS("masq_test.Rda")
+```
+
+```{r}
+x_train <- model.matrix(D_DEPDYS ~ ., data = train)[, -1]
+y_train <- train$D_DEPDYS
+
+x_test <- model.matrix(D_DEPDYS ~ ., data = test)[, -1]
+y_test <- test$D_DEPDYS
+```
+
+```{r}
+set.seed(42) 
+
+lasso_cv <- cv.glmnet(x_train, y_train, family = "binomial", alpha = 1)
+ridge_cv <- cv.glmnet(x_train, y_train, family = "binomial", alpha = 0)
+en_cv <- cv.glmnet(x_train, y_train, family = "binomial", alpha = 0.5)
+
+
+min(lasso_cv$cvm); min(ridge_cv$cvm); min(en_cv$cvm)
+```
+
+```{r}
+best_mod=lasso_cv 
+
+eta_hat=predict(best_mod, newx = x_test, s = "lambda.min")
+p_hat= 1 / (1 + exp(-eta_hat))
+
+
+brier_score=mean((y_test - p_hat)^2)
+
+predictions=ifelse(p_hat > 0.5, 1, 0)
+mcr=mean(predictions != y_test)
+
+cat("Brier Score:", brier_score, "\n")
+cat("MCR:", mcr, "\n")
+```
+
+```{r}
+best_coefs=coef(best_mod, s = "lambda.min")
+selected_vars=row.names(best_coefs)[which(best_coefs != 0)]
+print(selected_vars)
+```
+The results indicate most of variables belong to the Anhedonic Depression subscale. This shows that loss of pleasure is most useful symptom for identifying depressive disorder in this test.
+
+```{r}
+eta_hat=predict(lasso_cv, newx = x_test, s = "lambda.min")
+p_hat =1 / (1 + exp(-eta_hat))
+
+brier_score = mean((y_test - p_hat)^2)
+
+predictions = ifelse(p_hat > 0.5, 1, 0)
+mcr <- mean(predictions != y_test)
+
+print(paste("Brier Score:", round(brier_score, 4)))
+print(paste("Misclassification Rate (MCR):", round(mcr, 4)))
+```
+
+
+The MCR is 0.2264. It means that the model incorrectly predicted the diagnosis for about 22.6% of individuals in the test set. This also shows an overall accuracy of about 77.4%. 
+The Brier score is 0.1614. 0.16 is a good result because lower score is better. 
+All these results indicates that the penalized logistics regression model is a good predictor for this dataset.
