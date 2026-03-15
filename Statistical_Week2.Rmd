@@ -1,0 +1,61 @@
+---
+title: "Statistical_Learning_Week2"
+author: "Fatma Ozdal"
+date: "2026-03-10"
+output: pdf_document
+---
+```{r}
+library(MASS)
+```
+
+
+```{r}
+gen_data <- function(n) {
+  p <- 3
+  n1 <- n2 <- n/2
+  cov_1 <- diag(rep(1, p)) + 0.2
+  cov_2 <- cov_1
+  cov_2[1, 2] <- cov_2[2, 1] <- cov_2[1, 2] + 0.5
+  
+  x_class1 <- mvrnorm(n1, mu = rep(3, p), Sigma = cov_1)
+  x_class2 <- mvrnorm(n2, mu = rep(2, p), Sigma = cov_2)
+  
+  x <- rbind(x_class1, x_class2)
+  y <- rep(c(1, 2), c(n1, n2))
+  df <- as.data.frame(cbind(x, y))
+  names(df) <- c(paste0("x", 1:p), "y")
+  return(df)
+}
+```
+
+
+```{r}
+methods <- list(lda, qda)
+sizes <- c(30, 10000)
+reps <- 100
+accuracies <- matrix(0, length(methods), length(sizes))
+rownames(accuracies) <- c("lda", "qda")
+colnames(accuracies) <- sizes
+```
+
+
+```{r}
+for (r in 1:reps) {
+  for (j in 1:length(sizes)) {
+    train_data <- gen_data(sizes[j])
+    test_data <- gen_data(10000)
+    
+    for (i in 1:length(methods)) {
+      model <- methods[[i]](y ~ ., data = train_data)
+      preds <- predict(model, test_data)$class
+      accuracies[i, j] <- accuracies[i, j] + mean(preds == test_data$y)
+    }
+  }
+}
+
+print(accuracies / reps)
+```
+
+1) For small set, LDA has better variance-bias tradeoff. For large set, QDA has lower bias, and variance is less of an issue. 
+
+2) The results indicate that LDA has score of 0.716 and QDA is 0.698 on the small set. I was expecting that. On the large set, QDA's score 0.757 is bigger than LDA's 0.744. It shows. that QDA works better when it has enough information to learn from. 
