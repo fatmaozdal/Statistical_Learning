@@ -1,0 +1,106 @@
+---
+title: "Statistical_Learning_Week6"
+author: "Fatma Ozdal"
+date: "2026-03-16"
+output: pdf_document
+---
+
+
+Weekly Assignment 9: Splines and GAMs
+Marjolein Fokkema
+Context and datase
+
+```{r}
+getwd()
+```
+
+```{r}
+bike_dat=readRDS("bike_dat.Rdata")
+```
+
+
+```{r}
+ls()
+```
+
+to read variables;
+
+```{r}
+str(bike_dat)
+```
+
+
+```{r}
+set.seed(4139178)
+
+nobs=nrow(bike_dat)
+test_cases=sample(1:nobs,200)
+
+train_data=bike_dat[-test_cases,]
+test_data=bike_dat[test_cases,]
+```
+
+
+```{r}
+library("mgcv")
+model_gam=gam(counts~Day+month +snow +rain +bridge + s(High.Temp) + s(Low.Temp) +s(prec) + s(Date, bs = "re"), 
+               data = train_data, 
+               method = "REML")
+
+summary(model_gam)
+```
+
+
+b) Interpret the fitted model using the summary and plot methods:
+
+• In which month and on which weekday are New York bridges most (least) busy with cyclists? (You
+can gather this from the parametric part of the output of summary).
+
+  The most busy day is Wednesday, which has a highest estiamte (662.54).
+  The least busy day is Sunday, which is the lowest estimate (-1082.989). 
+  The most busy month is June (625.55), following it July(615.57).
+  BridgeWilliamsburg.Bridge (3106.17) has the highest number of cyclist.
+  
+• Do snow days yield di!erent cyclist counts than dry days? Than rain days?
+  Snowyes has estimate; -1115.49, and its p-value is 0.119287, which is big (>0.05), so there is no significant difference. In this dataset, the effect of snow didn't show in clear. 
+  Rainyes is negative coefficient (-583.61), but p-value is 2.66e-06 *** (<0.05). That is mean that the number of cyclist is decreasing in rainy days.
+
+  
+• Is the e!ect of temperature and precipitation significant? Use the output of the summary function
+under Approximate significance of smooth terms to evaluate this.
+
+  P-value of High.Temp is <2e-16, and prec has p-value <2e-16. However, p-value of low temperature is 0.0597, it is just above 0.05, it has a marjinal significant.
+
+
+• Describe the e!ect of temperature and precipitation based on the fitted smoothing spline curves ob-
+tained with plot(). Evaluate the strength of non-linearity using the edf values from the output of
+summary (edf of 1 corresponds to a linear e!ect, higher values indicate stronger non-linearity).
+  
+  The edf value of prec is 1.004, which is almost 1. SO, the effect of the amount of precipitation on number of cyclist is linear. 
+  The edf of high temperature 4.862 is larger than 1, and it shows a strong non-linear relationship btw temp. and cyclist.
+  
+• Evaluate the distribution of the random intercept estimated w.r.t. Date from the plot. Are there large
+di!erences in counts? Do the counts follow a normal distribution?
+
+  According to the summary, s(Date) is highly significant(<2e-16 ***), and it confirms that specific dates has an impact on cyclist count. And its edf value is 116.593, which highlight fluctuation between days. Because the model uses gaussian family, these variations distributed normally.
+
+
+
+c) Evaluate predictive accuracy (MSE) of the fitted GAM on the test observations
+
+```{r}
+preds <- predict(model_gam, newdata = test_data)
+
+MSE_gam <- mean((preds - test_data$counts)^2, na.rm = TRUE)
+
+MSE_gam
+
+MSE_max <- var(test_data$counts)
+cv_R2 <- 1 - MSE_gam / MSE_max
+
+
+print(paste("Test MSE:", MSE_gam))
+print(paste("Cross-validated R2:", cv_R2))
+```
+The MSE value is 522962.6. And the model indicates a strong fit with the R2 (0.862). The model predicts the model accurately.
+
